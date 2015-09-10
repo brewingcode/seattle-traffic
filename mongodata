@@ -1,0 +1,128 @@
+#!/usr/bin/env python
+
+import os
+import re
+import pymongo
+import HTMLCache
+from bs4 import BeautifulSoup
+from attrdict import AttrDict
+import json
+import moment
+import time
+import sys
+
+domain = 'https://kat.cr'
+min_seeds = 50
+num_pages = 5
+HTMLCache.bypass = True
+http_delay = 5
+rows_per_page = 100
+
+def main():
+  collection = mongo_connect()
+  if len(sys.argv) > 1:
+    if re.search(r'html', sys.argv[1], flags=re.I):
+      return from_html(collection)
+    elif re.search(r'json', sys.argv[1], flags=re.I):
+      return to_json(collection)
+  raise Exception('need to know if I am scraping HTML, or generating JSON')
+
+def from_html(collection):
+  torrents = []
+
+  for category in ['tv', 'movies', 'music', 'books']:
+    for i in xrange(1, num_pages+1):
+      cat_torrents = list(get_page(category, i))
+      print "{}/{} found {} torrents".format(category, i, len(cat_torrents))
+      torrents.extend(cat_torrents)
+      time.sleep(http_delay)
+
+  insert(torrents, collection)
+
+def to_json(collection):
+  partial_categories = []
+
+  for c in ['movies', 'tv', 'books', 'music']:
+    partial_categories.extend([otj(o) for o in collection
+      .find({'category':c})
+      .sort('age', pymongo.DESCENDING)
+      .limit(int(rows_per_page)/2)
+    ])
+
+  data = {
+    'byage':[otj(o) for o in collection
+      .find().sort('age', pymongo.DESCENDING)
+      .limit(rows_per_page)
+    ],
+    'byseeds':[otj(o) for o in collection.find()
+      .sort('seeds', pymongo.DESCENDING)
+      .limit(rows_per_page)
+    ],
+    'bycat':partial_categories
+  }
+
+  here = os.path.dirname(os.path.realpath(__file__))
+  with open(here + '/roots/torrents.json', 'w') as f:
+    json.dump(data, f)
+
+def otj(o): # object to json, so we can serialize pymongo object to json
+  ad = AttrDict(o)
+  return {
+    'age': ad.age,
+    'name': ad.title,
+    'category':ad.category,
+    'seeds': ad.seeds,
+    'magnet': ad.magnet,
+    'size': ad.size,
+    'kat_url': domain + ad.url
+  }
+
+def unmoment(s):
+  m = re.search(r'^(\d+)\s+(\w+)', re.sub(r'\xa0', ' ', s))
+  return moment.utcnow().subtract(amount=int(m.group(1)), key=m.group(2)).format('YYYY-MM-DDTHH:mm:ssZ')
+
+def tr_to_obj(row):
+  row_class = row.get('class')
+  if row_class and row_class[0] in ['odd', 'even']:
+    m = re.search(r'href="(magnet:\?xt=urn:btih:(\w+).*?)"', str(row), flags=re.I)
+    cells = row.find_all('td', recursive=False)
+    seeds = int(re.sub(r'\D', '', cells[4].string))
+    if m and seeds > min_seeds:
+      link = row.select('.cellMainLink')[0]
+      return AttrDict({
+        'magnet': m.group(1),
+        'hash': m.group(2),
+        'url': link['href'],
+        'title': link.string,
+        'size': ' '.join(cells[1].stripped_strings),
+        'age': unmoment(cells[3].string),
+        'seeds': seeds
+      })
+
+def get_page(category, i):
+  page_slug = '{}/'.format(i) if i != 1 else ''
+  url = '{}/{}/{}'.format(domain, category, page_slug)
+  html = HTMLCache.fetch(url)
+  soup = BeautifulSoup(html)
+  for row in soup.select('tr'):
+    r = tr_to_obj(row)
+    if r:
+      r.category = category
+      yield r
+
+def mongo_connect():
+  hostname = re.sub(r'^([^.]+).*', r'\1', os.uname()[1]).lower()
+  client = pymongo.MongoClient('localhost', ports[hostname])
+  return client.alex.torrents
+
+def insert(torrents, collection):
+  reqs = []
+  for t in torrents:
+    reqs.append(pymongo.ReplaceOne({'hash':t.hash}, t, upsert=True))
+  res = collection.bulk_write(reqs)
+  for stat in ['deleted', 'inserted', 'matched', 'modified', 'upserted']:
+    attr = stat + '_count'
+    print '{}: {}'.format(attr, getattr(res, attr))
+
+if __name__ == '__main__':
+  main()
