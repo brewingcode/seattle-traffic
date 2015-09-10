@@ -7,6 +7,7 @@ from bs4 import BeautifulSoup
 from attrdict import AttrDict
 import json
 import datetime
+import pytz
 import sys
 from bson import json_util
 
@@ -25,14 +26,89 @@ def main():
   raise Exception('need to know if I am scraping HTML, or generating JSON')
 
 def from_html():
-  points = [AttrDict({'utc':datetime.datetime.utcnow(), 'local':'150910-1342', 'times':[1,2,3]})]
-  # read files from data_dir, which is a series of html fragments
-  insert(points)
+  existing = {d['local']:1 for d in config.collection.find({}, {'local':1})}
+  print "found {} existing records".format(len(existing.keys()))
+
+  records = []
+  for filename in os.listdir(config.data_dir):
+    if filename in existing:
+      continue
+    records.extend([p for p in parse(filename) if p is not None])
+    if len(records) > 10000:
+      insert(records)
+      records = []
+  if len(records) > 0:
+    insert(records)
+
+# yields multiple times, with value of either None or an AttrDict
+def parse(filename):
+  local = pytz.timezone ("America/Los_Angeles")
+  naive = datetime.datetime.strptime('20'+filename, '%Y%m%d-%H%M')
+  local_dt = local.localize(naive, is_dst=None)
+  utc_dt = local_dt.astimezone (pytz.utc)
+
+  with open(config.data_dir + '/' + filename) as f:
+    html = f.read()
+
+  if len(html) > 10 or re.search(r'Travel Times Currently Unavailable', html):
+    yield None
+
+  soup = BeautifulSoup(html)
+  prev = AttrDict({
+    'start':'',
+    'end':'',
+    'via':''
+  })
+
+  for row in soup.select('tr')[1:]:
+    data = AttrDict({
+      'local':filename,
+      'utc':utc_dt,
+      'start':None,
+      'end':None,
+      'via':None,
+      'distance':None,
+      'average':None,
+      'current':None,
+      'hov':None,
+      'id':None
+    })
+
+    def number_parse(index):
+      val = re.sub(r'\s', '', tds[index].get_text())
+      try:
+        return float(val)
+      except:
+        return 0
+
+    tds = row.select('td')
+    m = re.search(r'(.*?) to (.*)', tds[1].get_text())
+    express = True if re.search(r'express lanes', tds[0].get_text(), re.I) else False
+    offset = -1 if express else 0
+
+    data.start = m.group(1) if m else prev.start
+    data.end = m.group(2) if m else prev.end
+
+    if express:
+      data.via = prev.via + ' (express)'
+    else:
+      data.via = ', '.join([t['alt'] for t in tds[0].select('img[alt]')])
+      prev.via = data.via
+
+    data.distance = number_parse(2+offset)
+    data.average = number_parse(3+offset)
+    data.current = number_parse(4+offset)
+    data.hov = number_parse(5+offset)
+    data.id = ','.join([data.local, data.start, data.end, data.via])
+
+    yield data
+    prev.start = data.start
+    prev.end = data.end
 
 def to_json():
   points = [mtj(p) for p in config.collection.find({})]
   here = os.path.dirname(os.path.realpath(__file__))
-  with open(here + '/assets/data.json', 'w') as f:
+  with open(here + '/assets/travel_times.json', 'w') as f:
     json.dump(points, f, default=json_util.default)
 
 def mtj(o):
@@ -40,15 +116,16 @@ def mtj(o):
 
 def set_config():
   global config
+
   hostname = re.sub(r'^([^.]+).*', r'\1', os.uname()[1]).lower()
-  client = pymongo.MongoClient('localhost', opts[hostname][0])
+  client = pymongo.MongoClient('localhost', opts[hostname][0], socketKeepAlive=True)
   config.collection = client.alex.travel_times
   config.data_dir = opts[hostname][1]
 
 def insert(records):
   reqs = []
   for r in records:
-    reqs.append(pymongo.ReplaceOne({'local':r.local}, r, upsert=True))
+    reqs.append(pymongo.ReplaceOne({'id':r.id}, r, upsert=True))
   res = config.collection.bulk_write(reqs)
   for stat in ['deleted', 'inserted', 'matched', 'modified', 'upserted']:
     print '{}: {}'.format(stat, getattr(res, stat+'_count'))
