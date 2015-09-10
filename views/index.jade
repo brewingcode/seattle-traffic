@@ -4,14 +4,15 @@ html
   head
     meta(charset='utf8')
     meta(http-equiv='X-UA-Compatible', content='IE=edge, chrome=1')
-    meta(name='description', content='description of your site')
-    meta(name='author', content= "author of the site")
+    meta(name='description', content='Historical graphs of Seattle freeway traffic')
     //- uncomment if your site is responsive!
     //- meta(name="viewport" content="width=device-width, initial-scale=1")
-    title= _path
+    title traffic
     != css()
 
   body
-    block content
+    div(id='graph') // the graph will show here, zoomable
+    div(id='controls') // controls for number of routes, specific day
+    div(id='routes') // two dropdowns for begin and end town, and a button to swap them
 
     != js()
