@@ -16,6 +16,8 @@ config = AttrDict({
   'data_dir':None
 })
 
+count = {}
+
 def main():
   set_config()
   if len(sys.argv) > 1:
@@ -123,12 +125,17 @@ def set_config():
   config.data_dir = opts[hostname][1]
 
 def insert(records):
+  global count
   reqs = []
   for r in records:
     reqs.append(pymongo.ReplaceOne({'id':r.id}, r, upsert=True))
   res = config.collection.bulk_write(reqs)
   for stat in ['deleted', 'inserted', 'matched', 'modified', 'upserted']:
-    print '{}: {}'.format(stat, getattr(res, stat+'_count'))
+    attr = stat + '_count'
+    if attr not in count:
+      count[attr] = 0
+    count[attr] += int(getattr(res, attr))
+    print '{}\t{}\t{}'.format(stat, getattr(res, stat+'_count'), count[attr])
 
 if __name__ == '__main__':
   main()
