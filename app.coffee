@@ -8,7 +8,7 @@ module.exports =
   ignores: ['mongodata', 'readme.md', '**/layout.*', '**/_*', '.gitignore', 'ship.*conf']
 
   extensions: [
-    js_pipeline(files: 'assets/js/*.coffee'),
+    js_pipeline(files: ['assets/js/*.js', 'assets/js/*.coffee']),
     css_pipeline(files: 'assets/css/*.styl')
   ]
 
