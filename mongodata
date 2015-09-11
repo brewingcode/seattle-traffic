@@ -134,8 +134,9 @@ def insert(records):
     attr = stat + '_count'
     if attr not in count:
       count[attr] = 0
-    count[attr] += int(getattr(res, attr))
-    print '{}\t{}\t{}'.format(stat, getattr(res, stat+'_count'), count[attr])
+    if int(getattr(res, attr)) > 0:
+      count[attr] += int(getattr(res, attr))
+      print '{}\t{}\t{}'.format(stat, getattr(res, stat+'_count'), count[attr])
 
 if __name__ == '__main__':
   main()
