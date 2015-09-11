@@ -18,14 +18,18 @@ config = AttrDict({
 
 count = {}
 
+here = os.path.dirname(os.path.realpath(__file__))
+
 def main():
   set_config()
   if len(sys.argv) > 1:
     if re.search(r'html', sys.argv[1], flags=re.I):
       return from_html()
-    elif re.search(r'json', sys.argv[1], flags=re.I):
-      return to_json()
-  raise Exception('need to know if I am scraping HTML, or generating JSON')
+    elif re.search(r'routes', sys.argv[1], flags=re.I):
+      return to_routes()
+    elif re.search(r'timing', sys.argv[1], flags=re.I):
+      return to_timing()
+  raise Exception('need to know if I am scraping HTML, generating routes, or generating timing data')
 
 def from_html():
   existing = {d['local']:1 for d in config.collection.find({}, {'local':1})}
@@ -107,14 +111,45 @@ def parse(filename):
     prev.start = data.start
     prev.end = data.end
 
-def to_json():
-  points = [mtj(p) for p in config.collection.find({})]
-  here = os.path.dirname(os.path.realpath(__file__))
-  with open(here + '/assets/travel_times.json', 'w') as f:
-    json.dump(points, f, default=json_util.default)
+def write_json(data, filename):
+  with open(here + '/' + filename, 'w') as f:
+    json.dump(data, f, default=json_util.default)
+    print "wrote {}/{}".format(here, filename)
 
-def mtj(o):
-  return AttrDict({k:o[k] for k in ('utc', 'local', 'times')})
+def to_routes():
+  routes = {}
+  cities = sorted([x for x in config.collection.distinct('start')])
+  for start in cities:
+    for end in cities:
+      if start == end: continue
+
+      if start not in routes:
+        routes[start] = {}
+      if end not in routes[start]:
+        routes[start][end] = None
+
+      # don't go re-querying for distinct data we already have
+      if end in routes and routes[end][start] is not None:
+        routes[start][end] = routes[end][start]
+      else:
+        print "{}->{}".format(start, end)
+        routes[start][end] = [x for x in config.collection.distinct('via', {'start':start, 'end':end})]
+
+  write_json(routes, 'assets/routes.json')
+
+def to_timing():
+  with open(here+'/assets/routes.json', 'r') as f:
+    routes = json.load(f)
+
+  for start in routes.keys():
+    for end in routes[start].keys():
+      directory = 'assets/timing/{}/{}'.format(start,end)
+      try:
+        os.makedirs(directory)
+      except:
+        pass
+      for route in routes[start][end]:
+        write_json({}, '{}/{}.json'.format(directory, route))
 
 def set_config():
   global config

@@ -1,4 +1,5 @@
 .DS_Store
 node_modules
 public
-assets/travel_times.json
+assets/routes.json
+assets/timing
