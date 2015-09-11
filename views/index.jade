@@ -13,11 +13,20 @@ html
   body
     div
       canvas(id='graph') This is a fancy chart that requires JavaScript, sorry. :-(
-    div(id='routes')
-      select(name='start')
-      select(name='route')
-      select(name='end')
-    div(id='controls') // number of days, different day, different time
+    div.container
+      div.col-xs-3.text-left
+        label(for="start") Starting at
+        br
+        select(id="start")
+      div.col-xs-6.text-center
+        label(for="start") Via route
+        br
+        select(id='route')
+      div.col-xs-3.text-right
+        label(for="end") Ending at
+        br
+        select(id='end')
+    div(id='controls')
 
     != js()
 

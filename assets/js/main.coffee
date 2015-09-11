@@ -30,8 +30,8 @@ makeGraph = (data) ->
 
 cityChanged = (which) ->
   other = if which is 'start' then 'end' else 'start'
-  thisCity = $('select[name="'+which+'"]')
-  otherCity = $('select[name="'+other+'"]')
+  thisCity = $('select#'+which)
+  otherCity = $('select#'+which)
 
   trySetting = (i) ->
     if otherCity.children().eq(i).val() is thisCity.val()
@@ -47,7 +47,7 @@ cityChanged = (which) ->
       trySetting(1)
 
   for x in ['start', 'end']
-    Cookies.set(x, $("select[name='#{x}']").val())
+    Cookies.set(x, $('select#'+x).val())
 
   findRoutes()
 
@@ -58,23 +58,25 @@ fillCities = (which) ->
   cities = (x for x of routesJson)
   cities.sort()
   for city in cities
-    $('select[name="'+which+'"]').append optionTag(city)
-  $('select[name="'+which+'"]').children().first().prop 'selected', true
+    $('select#'+which).append optionTag(city)
+  $('select#'+which).children().first().prop 'selected', true
 
 # given the 2 selected cities, update the list of routes bewteen them and
 # reload the graph
 findRoutes = ->
-  start = $('select[name="start"]').val()
-  end = $('select[name="end"]').val()
-  $('select[name="route"]').empty()
+  start = $('select#start').val()
+  end = $('select#end').val()
+  $('select#route').empty()
   for route in routesJson[start][end]
-    $('select[name="route"]').append optionTag(route)
-  $('select[name="route"]').children().first().prop 'selected', true
+    $('select#route').append optionTag(route)
+  $('select#route').children().first().prop 'selected', true
 
   makeGraph(exampleData)
 
 $(document).ready ->
   makeGraph(exampleData)
+
+#  $('select').addClass('selectpicker')
 
   $.getJSON 'routes.json', (routes) ->
     routesJson = routes
@@ -83,5 +85,5 @@ $(document).ready ->
     fillCities('end').parent().val(Cookies.get('end') or 'Seattle')
     findRoutes()
 
-    $('select[name="start"]').change -> cityChanged('start')
-    $('select[name="end"]').change -> cityChanged('end')
+    $('select#start').change -> cityChanged('start')
+    $('select#end').change -> cityChanged('end')
