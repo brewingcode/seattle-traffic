@@ -31,7 +31,7 @@ makeGraph = (data) ->
 cityChanged = (which) ->
   other = if which is 'start' then 'end' else 'start'
   thisCity = $('select#'+which)
-  otherCity = $('select#'+which)
+  otherCity = $('select#'+other)
 
   trySetting = (i) ->
     if otherCity.children().eq(i).val() is thisCity.val()
