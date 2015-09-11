@@ -11,8 +11,13 @@ html
     != css()
 
   body
-    canvas(id='graph') This is a fancy chart that requires JavaScript, sorry. :-(
-    div(id='controls') // controls for number of routes, specific day
-    div(id='routes') // two dropdowns for begin and end town, and a button to swap them
+    div
+      canvas(id='graph') This is a fancy chart that requires JavaScript, sorry. :-(
+    div(id='routes')
+      select(name='start')
+      select(name='route')
+      select(name='end')
+    div(id='controls') // number of days, different day, different time
 
     != js()
+
