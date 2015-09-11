@@ -66,6 +66,8 @@ fillCities = (which) ->
 findRoutes = ->
   start = $('select#start').val()
   end = $('select#end').val()
+  if start is end
+    return
   $('select#route').empty()
   for route in routesJson[start][end]
     $('select#route').append optionTag(route)
