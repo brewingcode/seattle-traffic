@@ -9,7 +9,7 @@ module.exports =
 
   extensions: [
     js_pipeline(files: ['assets/js/*.js', 'assets/js/*.coffee'], out: 'js/build.js', minify: true, hash: true),
-    css_pipeline(files: 'assets/css/*.styl', out: 'css/build.css', minify: true, hash: true)
+    css_pipeline(files: ['assets/css/*.css', 'assets/css/*.styl'], out: 'css/build.css', minify: true, hash: true)
   ]
 
   stylus:
