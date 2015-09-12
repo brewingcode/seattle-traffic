@@ -27,6 +27,7 @@ makeGraph = (data) ->
   new Chart(ctx).Line data,
     animation:true
     responsive:true
+    scaleFontSize: 15
 
 cityChanged = (which) ->
   other = if which is 'start' then 'end' else 'start'
@@ -77,8 +78,6 @@ findRoutes = ->
 
 $(document).ready ->
   makeGraph(exampleData)
-
-#  $('select').addClass('selectpicker')
 
   $.getJSON 'routes.json', (routes) ->
     routesJson = routes
