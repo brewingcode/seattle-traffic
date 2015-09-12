@@ -34,7 +34,7 @@ def main():
 
 def from_html():
   existing = {d['local']:1 for d in config.collection.find({}, {'local':1})}
-  print "found {} existing records".format(len(existing.keys()))
+  print "found {} existing timestamps".format(len(existing.keys()))
   os.system('mkdir -p {}/finished'.format(config.data_dir))
 
   records = []
