@@ -169,7 +169,7 @@ def to_timing():
 
 def build_timing_json(start, end, route, filename):
   times = [x for x in config.collection
-    .find({'start':start, 'end':end, 'via':route}, {'utc':1, 'time':1})
+    .find({'start':start, 'end':end, 'via':route}, {'utc':1, 'current':1})
     .sort('utc', pymongo.ASCENDING)
   ]
   print "{} time points".format(len(times))
