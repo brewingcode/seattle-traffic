@@ -109,7 +109,7 @@ def parse(filename):
     data.end = m.group(2) if m else prev.end
 
     if express:
-      data.via = prev.via + ' (express)'
+      data.via = prev.via + ' (E)'
     else:
       data.via = ', '.join([t['alt'] for t in tds[0].select('img[alt]')])
       prev.via = data.via
