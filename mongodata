@@ -172,8 +172,14 @@ def build_timing_json(start, end, route, filename):
     .find({'start':start, 'end':end, 'via':route}, {'utc':1, 'current':1})
     .sort('utc', pymongo.ASCENDING)
   ]
+  stripped = []
+  for t in times:
+    stripped.append({
+      'utc':t.utc,
+      'current':t.current
+    })
   print "{} time points".format(len(times))
-  write_json(times, filename)
+  write_json(stripped, filename)
 
 def set_config():
   global config
