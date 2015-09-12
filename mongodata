@@ -161,7 +161,15 @@ def to_timing():
       except:
         pass
       for route in routes[start][end]:
-        write_json({}, '{}/{}.json'.format(directory, route))
+        build_timing_json(start, end, route, '{}/{}/{}.json'.format(here, directory, route))
+
+def build_timing_json(start, end, route, filename):
+  times = [x for x in config.collection
+    .find({'start':start, 'end':end, 'via':route}, {'utc':1, 'time':1})
+    .sort('utc', pymongo.ASCENDING)
+  ]
+  print "{} time points".format(len(times))
+  write_json(times, filename)
 
 def set_config():
   global config
