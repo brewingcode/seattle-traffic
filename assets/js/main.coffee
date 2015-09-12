@@ -89,3 +89,4 @@ $(document).ready ->
 
     $('select#start').change -> cityChanged('start')
     $('select#end').change -> cityChanged('end')
+    $('select#route').change -> makeGraph(exampleData)
