@@ -38,15 +38,16 @@ def from_html():
   os.system('mkdir -p {}/finished'.format(config.data_dir))
 
   records = []
+  finished = []
   count = 0
   for filename in os.listdir(config.data_dir):
     count += 1
     if filename not in existing:
       records.extend([p for p in parse(filename) if p is not None])
-    os.system('mv {0}/{1} {0}/finished'.format(config.data_dir, filename))
+    finished.append(filename)
     sys.stdout.write('\r{}'.format(count))
     sys.stdout.flush()
-    if count > 500: break
+    if count >= 3000: break
 
   print ''
   temp_file = '/tmp/travel_times.json'
@@ -58,6 +59,9 @@ def from_html():
   else:
     os.system('rsync -zP {0} ec2:{0}'.format(temp_file))
     os.system('ssh ec2 {}'.format(import_cmd))
+
+  for f in finished:
+    os.system('mv {0}/{1} {0}/finished'.format(config.data_dir, f))
 
 # yields multiple times, with value of either None or an AttrDict
 def parse(filename):
