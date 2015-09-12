@@ -12,6 +12,7 @@ import sys
 from bson import json_util
 
 config = AttrDict({
+  'port':None,
   'collection':None,
   'data_dir':None
 })
@@ -34,17 +35,29 @@ def main():
 def from_html():
   existing = {d['local']:1 for d in config.collection.find({}, {'local':1})}
   print "found {} existing records".format(len(existing.keys()))
+  os.system('mkdir -p {}/finished'.format(config.data_dir))
 
   records = []
+  count = 0
   for filename in os.listdir(config.data_dir):
-    if filename in existing:
-      continue
-    records.extend([p for p in parse(filename) if p is not None])
-    if len(records) > 10000:
-      insert(records)
-      records = []
-  if len(records) > 0:
-    insert(records)
+    count += 1
+    if filename not in existing:
+      records.extend([p for p in parse(filename) if p is not None])
+    os.system('mv {0}/{1} {0}/finished'.format(config.data_dir, filename))
+    sys.stdout.write('\r{}'.format(count))
+    sys.stdout.flush()
+    if count > 500: break
+
+  print ''
+  temp_file = '/tmp/travel_times.json'
+  import_cmd = 'mongoimport --jsonArray --upsert --upsertFields start,end,via,local -h localhost:27017 -d alex {}'.format(temp_file)
+  write_json(records, temp_file)
+
+  if config.port == 27017:
+    os.system(import_cmd)
+  else:
+    os.system('rsync -zP {0} ec2:{0}'.format(temp_file))
+    os.system('ssh ec2 {}'.format(import_cmd))
 
 # yields multiple times, with value of either None or an AttrDict
 def parse(filename):
@@ -76,16 +89,16 @@ def parse(filename):
       'distance':None,
       'average':None,
       'current':None,
-      'hov':None,
-      'id':None
+      'hov':None
     })
 
     def number_parse(index):
       val = re.sub(r'\s', '', tds[index].get_text())
       try:
-        return float(val)
+        val = float(val)
       except:
-        return 0
+        val = 0.0
+      return int(val) if float.is_integer(val) else val
 
     tds = row.select('td')
     m = re.search(r'(.*?) to (.*)', tds[1].get_text())
@@ -105,16 +118,15 @@ def parse(filename):
     data.average = number_parse(3+offset)
     data.current = number_parse(4+offset)
     data.hov = number_parse(5+offset)
-    data.id = ','.join([data.local, data.start, data.end, data.via])
 
     yield data
     prev.start = data.start
     prev.end = data.end
 
 def write_json(data, filename):
-  with open(here + '/' + filename, 'w') as f:
+  with open(filename, 'w') as f:
     json.dump(data, f, default=json_util.default)
-    print "wrote {}/{}".format(here, filename)
+    print filename
 
 def to_routes():
   routes = {}
@@ -135,7 +147,7 @@ def to_routes():
         print "{}->{}".format(start, end)
         routes[start][end] = [x for x in config.collection.distinct('via', {'start':start, 'end':end})]
 
-  write_json(routes, 'assets/routes.json')
+  write_json(routes, here+'/assets/routes.json')
 
 def to_timing():
   with open(here+'/assets/routes.json', 'r') as f:
@@ -158,6 +170,7 @@ def set_config():
   client = pymongo.MongoClient('localhost', opts[hostname][0], socketKeepAlive=True)
   config.collection = client.alex.travel_times
   config.data_dir = opts[hostname][1]
+  config.port = opts[hostname][0]
 
 def insert(records):
   global count
