@@ -24,7 +24,7 @@ exampleData =
 
 makeGraph = (data) ->
   ctx = $('#graph').get(0).getContext("2d")
-  new Chart(ctx).Line data,
+  new Chart(ctx).Line exampleData,
     animation:true
     responsive:true
     scaleFontSize: 15
@@ -74,18 +74,15 @@ findRoutes = ->
     $('select#route').append optionTag(route)
   $('select#route').children().first().prop 'selected', true
 
-  makeGraph(exampleData)
+  makeGraph()
 
-$(document).ready ->
-  makeGraph(exampleData)
+$.getJSON 'routes.json', (routes) ->
+  routesJson = routes
 
-  $.getJSON 'routes.json', (routes) ->
-    routesJson = routes
+  fillCities('start').parent().val(Cookies.get('start') or 'Redmond')
+  fillCities('end').parent().val(Cookies.get('end') or 'Seattle')
+  findRoutes()
 
-    fillCities('start').parent().val(Cookies.get('start') or 'Redmond')
-    fillCities('end').parent().val(Cookies.get('end') or 'Seattle')
-    findRoutes()
-
-    $('select#start').change -> cityChanged('start')
-    $('select#end').change -> cityChanged('end')
-    $('select#route').change -> makeGraph(exampleData)
+  $('select#start').change -> cityChanged('start')
+  $('select#end').change -> cityChanged('end')
+  $('select#route').change -> makeGraph()
