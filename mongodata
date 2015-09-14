@@ -12,7 +12,7 @@ import sys
 from bson import json_util
 
 config = AttrDict({
-  'port':None,
+  'mongo_host':None,
   'collection':None,
   'data_dir':None
 })
@@ -51,14 +51,10 @@ def from_html():
 
   print ''
   temp_file = '/tmp/travel_times.json'
-  import_cmd = 'mongoimport --jsonArray --upsert --upsertFields start,end,via,local -h localhost:27017 -d alex {}'.format(temp_file)
+  import_cmd = 'mongoimport --jsonArray --upsert --upsertFields start,end,via,local -h {} -d alex {}'.format(config.mongo_host, temp_file)
   write_json(records, temp_file)
 
-  if config.port == 27017:
-    os.system(import_cmd)
-  else:
-    os.system('rsync -zP {0} ec2:{0}'.format(temp_file))
-    os.system('ssh ec2 {}'.format(import_cmd))
+  os.system(import_cmd)
 
   for f in finished:
     os.system('mv {0}/{1} {0}/finished'.format(config.data_dir, f))
@@ -185,10 +181,10 @@ def set_config():
   global config
 
   hostname = re.sub(r'^([^.]+).*', r'\1', os.uname()[1]).lower()
-  client = pymongo.MongoClient('localhost', opts[hostname][0], socketKeepAlive=True)
+  config.mongo_host = opts[hostname][0]
+  client = pymongo.MongoClient(config.mongo_host, socketKeepAlive=True)
   config.collection = client.alex.travel_times
   config.data_dir = opts[hostname][1]
-  config.port = opts[hostname][0]
 
 def insert(records):
   global count
