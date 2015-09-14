@@ -47,11 +47,10 @@ def from_html():
     finished.append(filename)
     sys.stdout.write('\r{}'.format(count))
     sys.stdout.flush()
-    if count >= 3000: break
 
   print ''
   temp_file = '/tmp/travel_times.json'
-  import_cmd = 'mongoimport --jsonArray --upsert --upsertFields start,end,via,local -h {} -d alex {}'.format(config.mongo_host, temp_file)
+  import_cmd = 'mongoimport --jsonArray -h {} -d alex {}'.format(config.mongo_host, temp_file)
   write_json(records, temp_file)
 
   os.system(import_cmd)
