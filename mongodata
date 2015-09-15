@@ -41,6 +41,9 @@ def from_html():
   finished = []
   count = 0
   for filename in os.listdir(config.data_dir):
+    if filename == 'finished':
+      continue
+
     count += 1
     if filename not in existing:
       records.extend([p for p in parse(filename) if p is not None])
@@ -170,8 +173,8 @@ def build_timing_json(start, end, route, filename):
   stripped = []
   for t in times:
     stripped.append({
-      'utc':t.utc,
-      'current':t.current
+      'u':int((t['utc'] - datetime.datetime(1970,1,1)).total_seconds()),
+      't':t['current']
     })
   print "{} time points".format(len(times))
   write_json(stripped, filename)
