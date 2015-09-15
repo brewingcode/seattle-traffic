@@ -1,33 +1,45 @@
 routesJson = null
-
-exampleData =
-  labels: ["January", "February", "March", "April", "May", "June", "July"],
-  datasets: [
-    label: "My First dataset",
-    fillColor: "rgba(220,220,220,0.2)",
-    strokeColor: "rgba(220,220,220,1)",
-    pointColor: "rgba(220,220,220,1)",
-    pointStrokeColor: "#fff",
-    pointHighlightFill: "#fff",
-    pointHighlightStroke: "rgba(220,220,220,1)",
-    data: [65, 59, 80, 81, 56, 55, 40]
-  ,
-    label: "My Second dataset",
-    fillColor: "rgba(151,187,205,0.2)",
-    strokeColor: "rgba(151,187,205,1)",
-    pointColor: "rgba(151,187,205,1)",
-    pointStrokeColor: "#fff",
-    pointHighlightFill: "#fff",
-    pointHighlightStroke: "rgba(151,187,205,1)",
-    data: [28, 48, 40, 19, 86, 27, 90]
-  ]
+config = {
+  time: moment.utc().subtract(72, 'h'), # time shown in middle of graph
+  delta: 2,           # duration before and after .time (in hours)
+  weeks: 4,           # number of weeks to go back
+}
 
 makeGraph = (data) ->
-  ctx = $('#graph').get(0).getContext("2d")
-  new Chart(ctx).Line exampleData,
-    animation:true
-    responsive:true
-    scaleFontSize: 15
+  dataFile = '/timing/' + [$('#start').val(), $('#end').val(), $('#route').val()].join('/') + '.json'
+  $.getJSON dataFile, (timing) ->
+    data = {}
+
+    lower = config.time.clone().subtract(config.delta, 'hours')
+    upper = config.time.clone().add(config.delta, 'hours')
+    data.labels = _.chain(timing).filter (p) ->
+      moment.unix(p.u).isBetween(lower, upper)
+    .map (p) ->
+      moment.unix(p.u).format('h:mm a')
+    .value()
+
+    data.datasets = []
+    for i in [0 .. config.weeks - 1]
+      lower = config.time.clone().subtract(i, 'weeks').subtract(config.delta, 'hours')
+      upper = config.time.clone().subtract(i, 'weeks').add(config.delta, 'hours')
+
+      console.log lower.toISOString(), ' to ', upper.toISOString()
+      data.datasets.push
+        label: config.time.clone().subtract(i, 'weeks').format('MMM D')
+        data: _.chain(timing).filter (p) ->
+          moment.unix(p.u).isBetween(lower, upper)
+        .pluck 't'
+        .value()
+
+      console.log _.last(data.datasets).data
+
+    ctx = $('#graph').get(0).getContext("2d")
+    new Chart(ctx).Line data,
+      animation:true
+      responsive:true
+      scaleFontSize: 15
+      datasetFill: false
+      pointDotRadius: 2
 
 cityChanged = (which) ->
   other = if which is 'start' then 'end' else 'start'
