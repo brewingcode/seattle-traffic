@@ -22,7 +22,9 @@ makeGraph = (data) ->
         data: _.chain(timing).filter (p) ->
           moment.unix(p.u).isBetween(lower, upper)
         .map (p) ->
-          [moment.unix(p.u).add(i, 'weeks').valueOf(), p.t]
+          adjustedUtc = moment.unix(p.u).add(i, 'weeks')
+          offset = moment(adjustedUtc, 'America/Los_Angeles').utcOffset()
+          [adjustedUtc.add(offset, 'minutes').valueOf(), p.t]
         .filter (p) ->
           p[1] > 0
         .value()
