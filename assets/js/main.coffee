@@ -4,13 +4,19 @@ routesJson = null
 config = {
   time: moment.utc().subtract(0, 'h'), # time shown in middle of graph
   delta: 2,           # duration before and after .time (in hours)
-  weeks: 4,           # number of weeks to go back
+  weeks: 5,           # number of weeks to go back
 }
+
+setHeight = -> $('#graph').height $('#graph').width() * 0.60
+$(window).resize -> setHeight()
 
 makeGraph = (data) ->
   dataFile = '/timing/' + [$('#start').val(), $('#end').val(), $('#route').val()].join('/') + '.json'
   $.getJSON dataFile, (timing) ->
     graphdef = []
+    options =
+      xaxis:
+        mode: 'time'
 
     for i in [0 .. config.weeks - 1]
       thisTime = config.time.clone().subtract(i, 'weeks')
@@ -29,9 +35,8 @@ makeGraph = (data) ->
           p[1] > 0
         .value()
 
-    plot = $.plot $('#graph'), graphdef,
-      xaxis:
-        mode: "time",
+    setHeight()
+    plot = $.plot $('#graph'), graphdef, options
 
 cityChanged = (which) ->
   other = if which is 'start' then 'end' else 'start'
