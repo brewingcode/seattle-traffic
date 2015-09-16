@@ -27,7 +27,13 @@ makeGraph = (data) ->
       .value()
 
     console.log graphdef
-    chart = uv.chart 'Line', graphdef
+    chart = uv.chart 'Line', graphdef,
+      graph:
+        orientation: 'Vertical'
+        hlabel: 'minutes'
+        vlabel: 'time'
+      axis:
+        ticks: 5
 
 cityChanged = (which) ->
   other = if which is 'start' then 'end' else 'start'
