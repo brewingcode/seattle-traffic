@@ -8,38 +8,26 @@ config = {
 makeGraph = (data) ->
   dataFile = '/timing/' + [$('#start').val(), $('#end').val(), $('#route').val()].join('/') + '.json'
   $.getJSON dataFile, (timing) ->
-    data = {}
+    graphdef =
+      categories: []
+      dataset: {}
 
-    lower = config.time.clone().subtract(config.delta, 'hours')
-    upper = config.time.clone().add(config.delta, 'hours')
-    data.labels = _.chain(timing).filter (p) ->
-      moment.unix(p.u).isBetween(lower, upper)
-    .map (p) ->
-      moment.unix(p.u).format('h:mm a')
-    .value()
-
-    data.datasets = []
     for i in [0 .. config.weeks - 1]
-      lower = config.time.clone().subtract(i, 'weeks').subtract(config.delta, 'hours')
-      upper = config.time.clone().subtract(i, 'weeks').add(config.delta, 'hours')
+      thisTime = config.time.clone().subtract(i, 'weeks')
+      thisCategory = thisTime.format('MMM D')
+      lower = thisTime.clone().subtract(config.delta, 'hours')
+      upper = thisTime.clone().add(config.delta, 'hours')
 
-      console.log lower.toISOString(), ' to ', upper.toISOString()
-      data.datasets.push
-        label: config.time.clone().subtract(i, 'weeks').format('MMM D')
-        data: _.chain(timing).filter (p) ->
-          moment.unix(p.u).isBetween(lower, upper)
-        .pluck 't'
-        .value()
+      graphdef.categories.push thisCategory
+      graphdef.dataset[thisCategory] = _.chain(timing).filter (p) ->
+        moment.unix(p.u).isBetween(lower, upper)
+      .map (p) ->
+        name: moment.unix(p.u).format('H:mm a')
+        value: p.t
+      .value()
 
-      console.log _.last(data.datasets).data
-
-    ctx = $('#graph').get(0).getContext("2d")
-    new Chart(ctx).Line data,
-      animation:true
-      responsive:true
-      scaleFontSize: 15
-      datasetFill: false
-      pointDotRadius: 2
+    console.log graphdef
+    chart = uv.chart 'Line', graphdef
 
 cityChanged = (which) ->
   other = if which is 'start' then 'end' else 'start'
