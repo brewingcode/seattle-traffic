@@ -26,6 +26,18 @@ html
         label(for="end") Ending at
         br
         select(id='end')
-    div(id='controls')
+    div.row
+      div.col-xs-3.text-left
+        label(for="time") Time
+        br
+        input(id='time', type='text', value="(now)")
+      div.col-xs-6.text-center
+        label(for="delta") Hours before and after
+        br
+        input(id='delta', type='text')
+      div.col-xs-3.text-right
+        label(for="weeks") # of weeks to include
+        br
+        input(id='weeks', type='text')
     div(style="height:4em")
     != js()
