@@ -1,39 +1,41 @@
-moment.tz.add('America/Los_Angeles|PST PDT|80 70|0101|1Lzm0 1zb0 Op0')
-
 routesJson = null
-now = moment(moment(), 'America/Los_Angeles')
+now = null
 
-setHeight = -> $('#graph').height $('#graph').width() * 0.60
-$(window).resize -> setHeight()
+init = ->
+  moment.tz.add('America/Los_Angeles|PST PDT|80 70|0101|1Lzm0 1zb0 Op0')
+  now = moment(moment(), 'America/Los_Angeles')
 
-updateTime = (t) ->
-  console.log now.toISOString()
-  now = moment(t)
-  makeGraph()
+  setHeight = -> $('#graph').height $('#graph').width() * 0.60
+  setHeight()
+  $(window).resize -> setHeight()
 
-$('#time').datetimepicker
-  onChangeDate: updateTime
-  onChangeTime: updateTime
-  onChangeDateTime: updateTime
-  closeOnDateSelect: true
-
-plainInput = (key, init) ->
-  $('#'+key).val(Cookies.get(key) or init).change ->
-    Cookies.set(key, $(@).val())
+  updateTime = (t) ->
+    now = moment(t)
     makeGraph()
-plainInput('delta', 3)
-plainInput('weeks', 4)
 
-$.getJSON 'routes.json', (routes) ->
-  routesJson = routes
+  $('#time').datetimepicker
+    onChangeDate: updateTime
+    onChangeTime: updateTime
+    onChangeDateTime: updateTime
+    closeOnDateSelect: true
 
-  fillCities('start').parent().val(Cookies.get('start') or 'Redmond')
-  fillCities('end').parent().val(Cookies.get('end') or 'Seattle')
-  findRoutes()
+  plainInput = (key, init) ->
+    $('#'+key).val(Cookies.get(key) or init).change ->
+      Cookies.set(key, $(@).val())
+      makeGraph()
+  plainInput('delta', 3)
+  plainInput('weeks', 4)
 
-  $('select#start').change -> cityChanged('start')
-  $('select#end').change -> cityChanged('end')
-  $('select#route').change -> makeGraph()
+  $.getJSON 'routes.json', (routes) ->
+    routesJson = routes
+
+    fillCities('start').parent().val(Cookies.get('start') or 'Redmond')
+    fillCities('end').parent().val(Cookies.get('end') or 'Seattle')
+    findRoutes()
+
+    $('select#start').change -> cityChanged('start')
+    $('select#end').change -> cityChanged('end')
+    $('select#route').change -> makeGraph()
 
 makeGraph = (data) ->
   dataFile = '/timing/' + [$('#start').val(), $('#end').val(), $('#route').val()].join('/') + '.json'
@@ -61,7 +63,6 @@ makeGraph = (data) ->
           p[1] > 0
         .value()
 
-    setHeight()
     plot = $.plot $('#graph'), graphdef, options
 
 cityChanged = (which) ->
@@ -110,3 +111,5 @@ findRoutes = ->
   $('select#route').children().first().prop 'selected', true
 
   makeGraph()
+
+init()
