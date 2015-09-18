@@ -38,13 +38,14 @@ init = ->
     $('select#route').change -> makeGraph()
 
 makeGraph = (data) ->
-  dataFile = '/timing/' + [$('#start').val(), $('#end').val(), $('#route').val()].join('/') + '.json'
-  $.getJSON dataFile, (timing) ->
+  dataFile = '/timing/' + [$('#start').val(), $('#end').val(), $('#route').val()].join('/') + '.base64'
+  $.ajax(dataFile).done (compressed) ->
     graphdef = []
     options =
       xaxis:
         mode: 'time'
 
+    timing = $.parseJSON(JXG.decompress compressed)
     for i in [0 .. $('#weeks').val() - 1]
       thisTime = now.clone().subtract(i, 'weeks')
       thisDelta = $('#delta').val()
@@ -54,11 +55,11 @@ makeGraph = (data) ->
       graphdef.push
         label: thisTime.format('MMM D')
         data: _.chain(timing).filter (p) ->
-          moment.unix(p.u).isBetween(lower, upper) and p.t > 0
+          moment.unix(p[0]).isBetween(lower, upper) and p[1] > 0
         .map (p) ->
-          utc = moment.unix(p.u).add(i, 'weeks')
-          offset = moment(moment.unix(p.u), 'America/Los_Angeles').utcOffset()
-          [utc.add(offset, 'minutes').valueOf(), p.t]
+          utc = moment.unix(p[0]).add(i, 'weeks')
+          offset = moment(moment.unix(p[0]), 'America/Los_Angeles').utcOffset()
+          [utc.add(offset, 'minutes').valueOf(), p[1]]
         .value()
 
     plot = $.plot $('#graph'), graphdef, options

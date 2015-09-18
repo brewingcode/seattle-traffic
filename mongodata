@@ -7,9 +7,11 @@ from bs4 import BeautifulSoup
 from attrdict import AttrDict
 import json
 import datetime
-import pytz
 import sys
 from bson import json_util
+import base64
+import zlib
+import urllib
 
 config = AttrDict({
   'mongo_host':None,
@@ -122,9 +124,14 @@ def parse(filename):
     prev.start = data.start
     prev.end = data.end
 
-def write_json(data, filename):
+def write_json(data, filename, compress=False):
   with open(filename, 'w') as f:
-    json.dump(data, f, default=json_util.default)
+    if compress:
+      text = json.dumps(data, default=json_util.default)
+      compressed = base64.b64encode(zlib.compress(urllib.quote(text), 9))
+      f.write(compressed)
+    else:
+      json.dump(data, f, default=json_util.default)
     print filename
 
 def to_routes():
@@ -160,7 +167,7 @@ def to_timing():
       except:
         pass
       for route in routes[start][end]:
-        build_timing_json(start, end, route, '{}/{}/{}.json'.format(here, directory, route))
+        build_timing_json(start, end, route, '{}/{}/{}.base64'.format(here, directory, route))
 
 def build_timing_json(start, end, route, filename):
   times = [x for x in config.collection
@@ -169,12 +176,12 @@ def build_timing_json(start, end, route, filename):
   ]
   stripped = []
   for t in times:
-    stripped.append({
-      'u':int((t['utc'] - datetime.datetime(1970,1,1)).total_seconds()),
-      't':t['current']
-    })
+    stripped.append([
+      int((t['utc'] - datetime.datetime(1970,1,1)).total_seconds()),
+      t['current']
+    ])
   print "{} time points".format(len(times))
-  write_json(stripped, filename)
+  write_json(stripped, filename, True)
 
 def set_config():
   global config
