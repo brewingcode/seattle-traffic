@@ -63,10 +63,7 @@ def from_html():
 
 # yields multiple times, with value of either None or an AttrDict
 def parse(filename):
-  local = pytz.timezone ("America/Los_Angeles")
-  naive = datetime.datetime.strptime('20'+filename, '%Y%m%d-%H%M')
-  local_dt = local.localize(naive, is_dst=None)
-  utc_dt = local_dt.astimezone (pytz.utc)
+  utc_dt = datetime.datetime.strptime('20'+filename, '%Y%m%d-%H%M')
 
   with open(config.data_dir + '/' + filename) as f:
     html = f.read()

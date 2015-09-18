@@ -3,7 +3,7 @@ now = null
 
 init = ->
   moment.tz.add('America/Los_Angeles|PST PDT|80 70|0101|1Lzm0 1zb0 Op0')
-  now = moment(moment(), 'America/Los_Angeles')
+  now = moment.utc()
 
   setHeight = -> $('#graph').height $('#graph').width() * 0.60
   setHeight()
@@ -54,13 +54,11 @@ makeGraph = (data) ->
       graphdef.push
         label: thisTime.format('MMM D')
         data: _.chain(timing).filter (p) ->
-          moment.unix(p.u).isBetween(lower, upper)
+          moment.unix(p.u).isBetween(lower, upper) and p.t > 0
         .map (p) ->
-          adjustedUtc = moment.unix(p.u).add(i, 'weeks')
-          offset = moment(adjustedUtc, 'America/Los_Angeles').utcOffset()
-          [adjustedUtc.add(offset, 'minutes').valueOf(), p.t]
-        .filter (p) ->
-          p[1] > 0
+          utc = moment.unix(p.u).add(i, 'weeks')
+          offset = moment(moment.unix(p.u), 'America/Los_Angeles').utcOffset()
+          [utc.add(offset, 'minutes').valueOf(), p.t]
         .value()
 
     plot = $.plot $('#graph'), graphdef, options
