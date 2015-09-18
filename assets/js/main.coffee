@@ -28,17 +28,15 @@ init = ->
 
   $.getJSON 'routes.json', (routes) ->
     routesJson = routes
-
     fillCities('start').parent().val(Cookies.get('start') or 'Redmond')
     fillCities('end').parent().val(Cookies.get('end') or 'Seattle')
-    findRoutes()
-
     $('select#start').change -> cityChanged('start')
     $('select#end').change -> cityChanged('end')
     $('select#route').change -> makeGraph()
+    findRoutes()
 
 makeGraph = (data) ->
-  dataFile = '/timing/' + [$('#start').val(), $('#end').val(), $('#route').val()].join('/') + '.base64'
+  dataFile = 'timing/' + [$('#start').val(), $('#end').val(), $('#route').val()].join('/') + '.base64'
   $.ajax(dataFile).done (compressed) ->
     graphdef = []
     options =
