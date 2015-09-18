@@ -3,7 +3,7 @@ now = null
 
 init = ->
   moment.tz.add('America/Los_Angeles|PST PDT|80 70|0101|1Lzm0 1zb0 Op0')
-  now = moment.utc()
+  now = moment(moment(), 'America/Los_Angeles')
 
   setHeight = -> $('#graph').height $('#graph').width() * 0.60
   setHeight()
@@ -38,17 +38,22 @@ init = ->
 makeGraph = (data) ->
   dataFile = 'timing/' + [$('#start').val(), $('#end').val(), $('#route').val()].join('/') + '.base64'
   $.ajax(dataFile).done (compressed) ->
-    graphdef = []
+    offset = moment(now, 'America/Los_Angeles').utcOffset()
+    delta = $('#delta').val()
+    min = now.clone().add(offset, 'minutes').subtract(delta, 'hours')
+    max = now.clone().add(offset, 'minutes').add(delta, 'hours')
     options =
       xaxis:
         mode: 'time'
+        min: min.valueOf()
+        max: max.valueOf()
 
     timing = $.parseJSON(JXG.decompress compressed)
+    graphdef = []
     for i in [0 .. $('#weeks').val() - 1]
       thisTime = now.clone().subtract(i, 'weeks')
-      thisDelta = $('#delta').val()
-      lower = thisTime.clone().subtract(thisDelta, 'hours')
-      upper = thisTime.clone().add(thisDelta, 'hours')
+      lower = thisTime.clone().subtract(delta, 'hours')
+      upper = thisTime.clone().add(delta, 'hours')
 
       graphdef.push
         label: thisTime.format('MMM D')
