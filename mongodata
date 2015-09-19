@@ -146,12 +146,8 @@ def to_routes():
       if end not in routes[start]:
         routes[start][end] = None
 
-      # don't go re-querying for distinct data we already have
-      if end in routes and routes[end][start] is not None:
-        routes[start][end] = routes[end][start]
-      else:
-        print "{}->{}".format(start, end)
-        routes[start][end] = [x for x in config.collection.distinct('via', {'start':start, 'end':end})]
+      print "{}->{}".format(start, end)
+      routes[start][end] = [x for x in config.collection.distinct('via', {'start':start, 'end':end})]
 
   write_json(routes, here+'/assets/routes.json')
 
