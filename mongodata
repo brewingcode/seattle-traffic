@@ -14,7 +14,7 @@ import zlib
 import urllib
 
 config = AttrDict({
-  'mongo_host':None,
+  'port':None,
   'collection':None,
   'data_dir':None
 })
@@ -34,34 +34,29 @@ def main():
       return to_timing()
   raise Exception('need to know if I am scraping HTML, generating routes, or generating timing data')
 
+def writeflush(s):
+  sys.stdout.write(s)
+  sys.stdout.flush()
+
 def from_html():
   existing = {d['local']:1 for d in config.collection.find({}, {'local':1})}
   print "found {} existing timestamps".format(len(existing.keys()))
-  os.system('mkdir -p {}/finished'.format(config.data_dir))
 
   records = []
-  finished = []
   count = 0
   for filename in os.listdir(config.data_dir):
-    if filename == 'finished':
-      continue
-
     count += 1
     if filename not in existing:
       records.extend([p for p in parse(filename) if p is not None])
-    finished.append(filename)
-    sys.stdout.write('\r{}'.format(count))
-    sys.stdout.flush()
+    writeflush('\r{}'.format(count))
 
-  print ''
-  temp_file = '/tmp/travel_times.json'
-  import_cmd = 'mongoimport --jsonArray -h {} -d alex {}'.format(config.mongo_host, temp_file)
+  writeflush('\n')
+
   write_json(records, temp_file)
+  temp_file = '/tmp/travel_times.json'
+  import_cmd = 'mongoimport --jsonArray -h localhost:{} -d alex {}'.format(config.port, temp_file)
 
   os.system(import_cmd)
-
-  for f in finished:
-    os.system('mv {0}/{1} {0}/finished'.format(config.data_dir, f))
 
 # yields multiple times, with value of either None or an AttrDict
 def parse(filename):
@@ -183,8 +178,8 @@ def set_config():
   global config
 
   hostname = re.sub(r'^([^.]+).*', r'\1', os.uname()[1]).lower()
-  config.mongo_host = opts[hostname][0]
-  client = pymongo.MongoClient(config.mongo_host, socketKeepAlive=True)
+  config.port = opts[hostname][0]
+  client = pymongo.MongoClient('localhost:{}'.format(config.port), socketKeepAlive=True)
   config.collection = client.alex.travel_times
   config.data_dir = opts[hostname][1]
 
