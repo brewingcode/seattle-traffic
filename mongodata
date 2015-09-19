@@ -14,7 +14,7 @@ import zlib
 import urllib
 
 config = AttrDict({
-  'port':None,
+  'mongo_host':None,
   'collection':None,
   'data_dir':None
 })
@@ -39,7 +39,7 @@ def writeflush(s):
   sys.stdout.flush()
 
 def from_html():
-  existing = {d['local']:1 for d in config.collection.find({}, {'local':1})}
+  existing = {d['stamp']:1 for d in config.collection.find({}, {'stamp':1})}
   print "found {} existing timestamps".format(len(existing.keys()))
 
   records = []
@@ -54,7 +54,7 @@ def from_html():
 
   write_json(records, temp_file)
   temp_file = '/tmp/travel_times.json'
-  import_cmd = 'mongoimport --jsonArray -h localhost:{} -d alex {}'.format(config.port, temp_file)
+  import_cmd = 'mongoimport --jsonArray -h {} -d alex {}'.format(config.mongo_host, temp_file)
 
   os.system(import_cmd)
 
@@ -77,7 +77,7 @@ def parse(filename):
 
   for row in soup.select('tr')[1:]:
     data = AttrDict({
-      'local':filename,
+      'stamp':filename,
       'utc':utc_dt,
       'start':None,
       'end':None,
@@ -178,8 +178,8 @@ def set_config():
   global config
 
   hostname = re.sub(r'^([^.]+).*', r'\1', os.uname()[1]).lower()
-  config.port = opts[hostname][0]
-  client = pymongo.MongoClient('localhost:{}'.format(config.port), socketKeepAlive=True)
+  config.mongo_host = opts[hostname][0]
+  client = pymongo.MongoClient(config.mongo_host, socketKeepAlive=True)
   config.collection = client.alex.travel_times
   config.data_dir = opts[hostname][1]
 
