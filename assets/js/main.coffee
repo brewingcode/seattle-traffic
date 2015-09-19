@@ -47,6 +47,8 @@ makeGraph = (data) ->
         mode: 'time'
         min: min.valueOf()
         max: max.valueOf()
+      grid:
+        hoverable: true
 
     timing = $.parseJSON(JXG.decompress compressed)
     graphdef = []
@@ -66,6 +68,7 @@ makeGraph = (data) ->
         .value()
 
     plot = $.plot $('#graph'), graphdef, options
+    $('#graph').bind 'plothover', makeTooltip
 
 cityChanged = (which) ->
   other = if which is 'start' then 'end' else 'start'
@@ -113,5 +116,19 @@ findRoutes = ->
   $('select#route').children().first().prop 'selected', true
 
   makeGraph()
+
+makeTooltip = (event, pos, item) ->
+  if item
+    x = item.datapoint[0]
+    y = item.datapoint[1]
+    localTime = moment(x).subtract(moment(0, 'America/Los_Angeles').utcOffset(), 'minutes').subtract(item.seriesIndex, 'weeks')
+    shiftTime = moment(localTime, 'America/Los_Angeles').format('MMM D h:mma')
+    $('#tooltip').html("#{shiftTime}: #{y} mins").css
+      top: item.pageY + 5
+      left: item.pageX + 5
+      'border-color': item.series.color
+    .fadeIn 200
+  else
+    $('#tooltip').hide()
 
 init()
