@@ -91,7 +91,8 @@ optionTag = (val, selected) ->
   html += if selected then " selected" else ""
   html += ">#{val}</option>"
 
-# fill in a dropdown with our cities, select the first one, and return it
+# fill in a dropdown with our cities, and either select a specific city,
+# or just the first one
 fillCities = (which, selected) ->
   allCities = _.sortBy(x for x of routesJson)
   if which == 'start'
