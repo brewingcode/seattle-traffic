@@ -3,3 +3,4 @@ node_modules
 public
 assets/routes.json
 assets/timing
+cronjob
