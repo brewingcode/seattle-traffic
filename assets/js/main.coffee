@@ -28,8 +28,8 @@ init = ->
 
   $.getJSON 'routes.json', (routes) ->
     routesJson = routes
-    fillCities('start').parent().val(Cookies.get('start') or 'Redmond')
-    fillCities('end').parent().val(Cookies.get('end') or 'Seattle')
+    fillCities('start', Cookies.get('start') or 'Redmond')
+    fillCities('end', Cookies.get('end') or 'Seattle')
     $('select#start').change -> cityChanged('start')
     $('select#end').change -> cityChanged('end')
     $('select#route').change -> makeGraph()
@@ -74,48 +74,53 @@ makeGraph = (data) ->
     $('#graph').bind 'plothover', makeTooltip
 
 cityChanged = (which) ->
-  other = if which is 'start' then 'end' else 'start'
-  thisCity = $('select#'+which)
-  otherCity = $('select#'+other)
+  start = $('#start').val()
+  end = $('#end').val()
 
-  trySetting = (i) ->
-    if otherCity.children().eq(i).val() is thisCity.val()
-      return false
-    otherCity.val otherCity.children().eq(i).val()
-    return true
-
-  # try to set the other city to the first option, but there's a small
-  # chance that will collide with *this* city, so use the second option
-  # if it comes to that
-  if otherCity.val() is thisCity.val()
-    if not trySetting(0)
-      trySetting(1)
+  if routesJson[start][end].length == 0
+    # need to fix the other end
+    if which == 'start'
+      fillCities 'end'
 
   for x in ['start', 'end']
     Cookies.set(x, $('select#'+x).val())
 
   findRoutes()
 
-optionTag = (val) -> "<option value=\"#{val}\">#{val}</option>"
+optionTag = (val, selected) ->
+  html = "<option value=\"#{val}\""
+  html += if selected then " selected" else ""
+  html += ">#{val}</option>"
 
 # fill in a dropdown with our cities, select the first one, and return it
-fillCities = (which) ->
-  cities = (x for x of routesJson)
-  cities.sort()
-  for city in cities
-    $('select#'+which).append optionTag(city)
-  $('select#'+which).children().first().prop 'selected', true
+fillCities = (which, selected) ->
+  allCities = _.sortBy(x for x of routesJson)
+  if which == 'start'
+    $('select#'+which).html(_.chain(allCities).map (city) ->
+      optionTag city, selected is city
+    .value())
+  else
+    $('select#'+which).html(_.chain(allCities).sortBy().map (city) ->
+      if routesJson[$('#start').val()][city].length > 0
+        optionTag city, selected is city
+      else
+        ''
+    .filter().value())
+
+  if not selected
+    $('select#'+which).children().first().prop 'selected', true
 
 # given the 2 selected cities, update the list of routes bewteen them and
 # reload the graph
 findRoutes = ->
   start = $('select#start').val()
   end = $('select#end').val()
-  if start is end
-    return
-  $('select#route').empty()
-  for route in routesJson[start][end]
-    $('select#route').append optionTag(route)
+  $('select#route').html(_.chain(x for x in routesJson[start][end]).sortBy (r) ->
+    r.length
+  .map (r) ->
+    optionTag(r)
+  .value())
+
   $('select#route').children().first().prop 'selected', true
 
   makeGraph()
