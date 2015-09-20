@@ -5,7 +5,7 @@ init = ->
   moment.tz.add('America/Los_Angeles|PST PDT|80 70|0101|1Lzm0 1zb0 Op0')
   now = moment(moment(), 'America/Los_Angeles')
 
-  setHeight = -> $('#graph').height $('#graph').width() * 0.60
+  setHeight = -> $('#graph').height $('#graph').width() * 0.50
   setHeight()
   $(window).resize -> setHeight()
 
@@ -23,8 +23,8 @@ init = ->
     $('#'+key).val(Cookies.get(key) or init).change ->
       Cookies.set(key, $(@).val())
       makeGraph()
-  plainInput('delta', 3)
-  plainInput('weeks', 4)
+  plainInput('delta', 6)
+  plainInput('weeks', 5)
 
   $.getJSON 'routes.json', (routes) ->
     routesJson = routes
