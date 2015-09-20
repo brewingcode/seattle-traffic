@@ -47,6 +47,9 @@ makeGraph = (data) ->
         mode: 'time'
         min: min.valueOf()
         max: max.valueOf()
+        tickFormatter: (val) ->
+          offset = moment(val, 'America/Los_Angeles').utcOffset()
+          moment(val).subtract(offset, 'minutes').format('h:mma')
       grid:
         hoverable: true
 
