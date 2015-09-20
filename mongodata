@@ -153,8 +153,6 @@ def to_routes():
   cities = sorted([x for x in config.collection.distinct('start')])
   for start in cities:
     for end in cities:
-      if start == end: continue
-
       if start not in routes:
         routes[start] = {}
       if end not in routes[start]:
