@@ -12,6 +12,7 @@ from bson import json_util
 import base64
 import zlib
 import urllib
+import subprocess
 
 config = AttrDict({
   'mongo_host':None,
@@ -38,13 +39,33 @@ def writeflush(s):
   sys.stdout.write(s)
   sys.stdout.flush()
 
-def from_html():
-  existing = {d['stamp']:1 for d in config.collection.find({}, {'stamp':1})}
-  print "found {} existing timestamps".format(len(existing.keys()))
+def stamp_to_date(stamp):
+  m = re.search(r'^(\d\d)(\d\d)(\d\d)-(\d\d)(\d\d)', stamp)
+  if m:
+    nums = [int(m.group(x)) for x in xrange(2, 6)]
+    nums.insert(0, int('20'+m.group(1)))
+    return datetime.datetime(*nums)
+  else:
+    return datetime.datetime(1970, 1, 1)
 
+def from_html():
   records = []
   count = 0
-  for filename in os.listdir(config.data_dir):
+  temp_file = '/tmp/travel_times.json'
+
+  most_recent = [x for x in config.collection.aggregate([{'$group':{'_id':'$stamp', 'latest':{'$max':'$utc'}}}])]
+  if len(most_recent) > 0:
+    most_recent = most_recent[0]['latest']
+  else:
+    most_recent = datetime.datetime(1970,1,1)
+
+  existing = {d['stamp']:1 for d in config.collection.find({}, {'stamp':1})}
+  print "found {} existing timestamps, most recent in mongo is {}".format(len(existing.keys()), most_recent)
+
+  files = subprocess.check_output('cd {} && ls -1 | sort -r'.format(config.data_dir), shell=True)
+  for filename in files.splitlines():
+    if stamp_to_date(filename) < most_recent:
+      break
     count += 1
     if filename not in existing:
       records.extend([p for p in parse(filename) if p is not None])
@@ -53,9 +74,7 @@ def from_html():
   writeflush('\n')
 
   write_json(records, temp_file)
-  temp_file = '/tmp/travel_times.json'
   import_cmd = 'mongoimport --jsonArray -h {} -d alex {}'.format(config.mongo_host, temp_file)
-
   os.system(import_cmd)
 
 # yields multiple times, with value of either None or an AttrDict
