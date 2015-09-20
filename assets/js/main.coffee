@@ -132,3 +132,4 @@ makeTooltip = (event, pos, item) ->
     $('#tooltip').hide()
 
 init()
+
