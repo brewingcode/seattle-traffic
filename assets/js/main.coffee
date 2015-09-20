@@ -75,9 +75,10 @@ cityChanged = (which) ->
   start = $('#start').val()
   end = $('#end').val()
 
-  if routesJson[start][end].length == 0
-    # need to fix the other end
-    if which == 'start'
+  if which == 'start'
+    if routesJson[start][end].length > 0
+      fillCities 'end', end
+    else
       fillCities 'end'
 
   for x in ['start', 'end']
