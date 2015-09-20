@@ -4,3 +4,4 @@ public
 assets/routes.json
 assets/timing
 cronjob
+ship.conf

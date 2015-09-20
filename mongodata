@@ -13,6 +13,7 @@ import base64
 import zlib
 import urllib
 import subprocess
+import yaml
 
 config = AttrDict({
   'mongo_host':None,
@@ -193,6 +194,9 @@ def build_timing_json(start, end, route, filename):
 
 def set_config():
   global config
+
+  with open(here+'/ship.conf', 'r') as f:
+   opts = yaml.load(f)['mongo']
 
   hostname = re.sub(r'^([^.]+).*', r'\1', os.uname()[1]).lower()
   config.mongo_host = opts[hostname][0]
