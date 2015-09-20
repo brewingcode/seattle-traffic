@@ -28,25 +28,23 @@ init = ->
 
   $.getJSON 'routes.json', (routes) ->
     routesJson = routes
-    fillCities('start', Cookies.get('start') or 'Redmond')
-    fillCities('end', Cookies.get('end') or 'Seattle')
+    fillCities('start', Cookies.get('start') or 'Seattle')
+    fillCities('end', Cookies.get('end') or 'Redmond')
+    findRoutes()
     $('select#start').change -> cityChanged('start')
     $('select#end').change -> cityChanged('end')
     $('select#route').change -> makeGraph()
-    findRoutes()
 
 makeGraph = (data) ->
   dataFile = 'timing/' + [$('#start').val(), $('#end').val(), $('#route').val()].join('/') + '.base64'
   $.ajax(dataFile).done (compressed) ->
     offset = moment(now, 'America/Los_Angeles').utcOffset()
     delta = $('#delta').val()
-    min = now.clone().add(offset, 'minutes').subtract(delta, 'hours')
-    max = now.clone().add(offset, 'minutes').add(delta, 'hours')
     options =
       xaxis:
         mode: 'time'
-        min: min.valueOf()
-        max: max.valueOf()
+        min: now.clone().add(offset, 'minutes').subtract(delta, 'hours').valueOf()
+        max: now.clone().add(offset, 'minutes').add(delta, 'hours').valueOf()
         tickFormatter: (val) ->
           offset = moment(val, 'America/Los_Angeles').utcOffset()
           moment(val).subtract(offset, 'minutes').format('h:mma')
@@ -100,7 +98,7 @@ fillCities = (which, selected) ->
       optionTag city, selected is city
     .value())
   else
-    $('select#'+which).html(_.chain(allCities).sortBy().map (city) ->
+    $('select#'+which).html(_.chain(allCities).map (city) ->
       if routesJson[$('#start').val()][city].length > 0
         optionTag city, selected is city
       else
