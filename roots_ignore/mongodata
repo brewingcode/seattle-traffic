@@ -23,7 +23,7 @@ config = AttrDict({
 
 count = {}
 
-here = os.path.dirname(os.path.realpath(__file__))
+here = os.path.dirname(os.path.realpath(__file__)) + '/..'
 
 def main():
   set_config()
