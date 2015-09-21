@@ -17,6 +17,8 @@ import yaml
 
 config = AttrDict({
   'mongo_host':None,
+  'mongo_db':None,
+  'mongo_collection':None,
   'collection':None,
   'data_dir':None
 })
@@ -28,13 +30,17 @@ here = os.path.dirname(os.path.realpath(__file__)) + '/..'
 def main():
   set_config()
   if len(sys.argv) > 1:
-    if re.search(r'html', sys.argv[1], flags=re.I):
-      return from_html()
-    elif re.search(r'routes', sys.argv[1], flags=re.I):
-      return to_routes()
-    elif re.search(r'timing', sys.argv[1], flags=re.I):
-      return to_timing()
-  raise Exception('need to know if I am scraping HTML, generating routes, or generating timing data')
+    for arg in sys.argv[1:]:
+      if re.search(r'html', arg, flags=re.I):
+        from_html()
+      elif re.search(r'routes', arg, flags=re.I):
+        to_routes()
+      elif re.search(r'timing', arg, flags=re.I):
+        to_timing()
+      else:
+        raise Exception('do not know what ' + arg + ' is')
+  else:
+    raise Exception('need to know if I am scraping HTML, generating routes, or generating timing data')
 
 def writeflush(s):
   sys.stdout.write(s)
@@ -52,7 +58,7 @@ def stamp_to_date(stamp):
 def from_html():
   records = []
   count = 0
-  temp_file = '/tmp/travel_times.json'
+  temp_file = '/tmp/{}.json'.format(config.mongo_collection)
 
   most_recent = [x for x in config.collection.aggregate([{'$group':{'_id':'$stamp', 'latest':{'$max':'$utc'}}}])]
   if len(most_recent) > 0:
@@ -75,7 +81,7 @@ def from_html():
   writeflush('\n')
 
   write_json(records, temp_file)
-  import_cmd = 'mongoimport --jsonArray -h {} -d alex {}'.format(config.mongo_host, temp_file)
+  import_cmd = 'mongoimport --jsonArray -h {} -d {} {}'.format(config.mongo_host, config.mongo_dbtemp_file)
   os.system(import_cmd)
 
 # yields multiple times, with value of either None or an AttrDict
@@ -198,11 +204,12 @@ def set_config():
   with open(here+'/ship.conf', 'r') as f:
    opts = yaml.load(f)['mongo']
 
-  hostname = re.sub(r'^([^.]+).*', r'\1', os.uname()[1]).lower()
-  config.mongo_host = opts[hostname][0]
+  config.mongo_host = opts[0]
   client = pymongo.MongoClient(config.mongo_host, socketKeepAlive=True)
-  config.collection = client.alex.travel_times
-  config.data_dir = opts[hostname][1]
+  config.collection = client[opts[2]][opts[3]]
+  config.data_dir = opts[1]
+  config.mongo_db = opts[2]
+  config.mongo_collection = opts[3]
 
 if __name__ == '__main__':
   main()

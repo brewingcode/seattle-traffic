@@ -1,0 +1,6 @@
+mongo: [
+  "localhost:27017",
+  "/tmp/directoryWithHTMLFiles",
+  "yourDatabaseName",
+  "yourCollectionName",
+]

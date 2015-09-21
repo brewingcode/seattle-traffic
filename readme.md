@@ -23,5 +23,9 @@ Hours before and after  |           6 | Number of hours to show before and after
 
 - make sure [node.js](http://nodejs.org) and [roots](http://roots.cx) are
   installed
-- clone this repo down and `cd` into the folder
-- run `npm install && roots watch`
+- clone this repo down and run `cd seattle-traffic && npm install`
+- run `cp roots_ignore/ship.conf.example ship.conf`, and modify to your env.
+  The `directoryWithHTMLFiles` part is, uh, complicated
+- install python packages `attrdict beautifulsoup4 pymongo pyyaml`
+- run `roots_ignore/mongodata html routes timing` to parse and generate data
+- run `roots watch`
