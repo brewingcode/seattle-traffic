@@ -204,19 +204,5 @@ def set_config():
   config.collection = client.alex.travel_times
   config.data_dir = opts[hostname][1]
 
-def insert(records):
-  global count
-  reqs = []
-  for r in records:
-    reqs.append(pymongo.ReplaceOne({'id':r.id}, r, upsert=True))
-  res = config.collection.bulk_write(reqs)
-  for stat in ['deleted', 'inserted', 'matched', 'modified', 'upserted']:
-    attr = stat + '_count'
-    if attr not in count:
-      count[attr] = 0
-    if int(getattr(res, attr)) > 0:
-      count[attr] += int(getattr(res, attr))
-      print '{}\t{}\t{}'.format(stat, getattr(res, stat+'_count'), count[attr])
-
 if __name__ == '__main__':
   main()
