@@ -7,7 +7,7 @@ html
     meta(name='description', content='Historical graphs of Seattle freeway traffic')
     //- uncomment if your site is responsive!
     meta(name="viewport" content="width=device-width, initial-scale=0.65, user-scalable=no")
-    title traffic
+    title Seattle Traffic
     != css()
 
   body
@@ -39,6 +39,8 @@ html
         label(for="weeks") # of weeks to include
         br
         input(id='weeks', type='text')
+    div.text-center
+      a(href="https://github.com/brewingcode/seattle-traffic") view on github.com
     div(style="height:4em")
     div(id='tooltip')
     != js()
