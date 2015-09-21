@@ -5,7 +5,7 @@ js_pipeline  = require 'js-pipeline'
 css_pipeline = require 'css-pipeline'
 
 module.exports =
-  ignores: ['mongodata', 'cronjob', 'readme.md', '**/layout.*', '**/_*', '.gitignore', 'ship.*conf']
+  ignores: ['roots_ignore/**', 'readme.md', '**/layout.*', '**/_*', '.gitignore', 'ship.*conf']
 
   extensions: [
     js_pipeline(files: [
