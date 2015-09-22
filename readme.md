@@ -1,23 +1,23 @@
-# seattle-traffic
+# Seattle Traffic
 
-[Historical graphs](http://traffic.brewingcode.net) of Seattle freeway
-traffic, based on data from
+This is a [historical graph](http://traffic.brewingcode.net) of Seattle
+freeway traffic, based on data from
 [WSDOT](http://www.wsdot.com/traffic/traveltimes/default.aspx). The idea is
 a quick glance at how travel times in the same timespan in the same day of
-the week can show a pattern for how reliable the current trend is today.
+the week can show a pattern for how reliable the current trend is, today.
 
 ### Settings
 
 ![screenshot](roots_ignore/screen.png)
 
-Name|Default|Notes
+Setting|Default|Explanation
 :---|------:|:----
 Starting at             |     Seattle | City to start at
 Via route               | I-5, SR 520 | Possible routes between them
 Ending                  |     Redmond | City to end at, may change depending on `Starting at`
 Time                    |   (now)     | Time to base the graph on, this time falls in the exact center
 Hours before and after  |           6 | Number of hours to show before and after `Time`
-\# of weeks to include  |           5 | Number of weeks back to fetch data for
+\# of days              |           5 | Number of days to include in the graph (days are 1 week apart)
 
 ### Setup
 
