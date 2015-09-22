@@ -81,7 +81,7 @@ def from_html():
   writeflush('\n')
 
   write_json(records, temp_file)
-  import_cmd = 'mongoimport --jsonArray -h {} -d {} {}'.format(config.mongo_host, config.mongo_dbtemp_file)
+  import_cmd = 'mongoimport --jsonArray -h {} -d {} {}'.format(config.mongo_host, config.mongo_db, temp_file)
   os.system(import_cmd)
 
 # yields multiple times, with value of either None or an AttrDict
