@@ -11,7 +11,7 @@ init = ->
 
   updateTime = (t) ->
     now = moment(t)
-    ga 'send', 'event', 'datetimepicker', 'pick', now.toISOString()
+    ga 'send', 'event', 'change', 'now', now.toISOString()
     makeGraph()
 
   $('#time').datetimepicker
@@ -23,7 +23,7 @@ init = ->
   plainInput = (key, init) ->
     $('#'+key).val(Cookies.get(key) or init).change ->
       Cookies.set key, $(@).val()
-      ga 'send', 'event', 'textinput', key, $(@).val()
+      ga 'send', 'event', 'change', key, $(@).val()
       makeGraph()
   plainInput('delta', 6)
   plainInput('weeks', 5)
@@ -36,7 +36,7 @@ init = ->
     $('select#start').change -> cityChanged('start')
     $('select#end').change -> cityChanged('end')
     $('select#route').change ->
-      ga 'send', 'event', 'dropdown', 'route', $('#route').val()
+      ga 'send', 'event', 'change', 'route', $('#route').val()
       makeGraph()
 
 makeGraph = (data) ->
@@ -80,13 +80,13 @@ cityChanged = (which) ->
   end = $('#end').val()
 
   if which == 'start'
-    ga 'send', 'event', 'dropdown', 'start', $('#start').val()
+    ga 'send', 'event', 'change', 'start', $('#start').val()
     if routesJson[start][end].length > 0
       fillCities 'end', end
     else
       fillCities 'end'
   else
-    ga 'send', 'event', 'dropdown', 'end', $('#end').val()
+    ga 'send', 'event', 'change', 'end', $('#end').val()
 
   for x in ['start', 'end']
     Cookies.set(x, $('select#'+x).val())

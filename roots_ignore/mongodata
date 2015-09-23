@@ -66,7 +66,7 @@ def from_html():
   else:
     most_recent = datetime.datetime(1970,1,1)
 
-  existing = {d['stamp']:1 for d in config.collection.find({}, {'stamp':1})}
+  existing = {d:1 for d in config.collection.distinct('stamp')}
   print "found {} existing timestamps, most recent in mongo is {}".format(len(existing.keys()), most_recent)
 
   files = subprocess.check_output('cd {} && ls -1 | sort -r'.format(config.data_dir), shell=True)
@@ -185,8 +185,9 @@ def to_timing():
         build_timing_json(start, end, route, '{}/{}/{}.base64'.format(here, directory, route))
 
 def build_timing_json(start, end, route, filename):
+  min_time = datetime.datetime.utcnow() - datetime.timedelta(weeks=8, days=2)
   times = [x for x in config.collection
-    .find({'start':start, 'end':end, 'via':route}, {'utc':1, 'current':1})
+    .find({'start':start, 'end':end, 'via':route, 'utc':{'$gt':min_time}}, {'utc':1, 'current':1})
     .sort('utc', pymongo.ASCENDING)
   ]
   stripped = []
@@ -206,6 +207,7 @@ def set_config():
 
   config.mongo_host = opts[0]
   client = pymongo.MongoClient(config.mongo_host, socketKeepAlive=True)
+
   config.collection = client[opts[2]][opts[3]]
   config.data_dir = opts[1]
   config.mongo_db = opts[2]

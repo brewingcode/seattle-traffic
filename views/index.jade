@@ -38,7 +38,9 @@ html
       div.col-xs-3.text-right
         label(for="weeks") # of days to include
         br
-        input(id='weeks', type='text')
+        select(id='weeks')
+          each n in [1,2,3,4,5,6,7,8]
+            option(val=n)= n
     div(id='usage', style='padding-bottom:2em')
       h3 More Info
       div
