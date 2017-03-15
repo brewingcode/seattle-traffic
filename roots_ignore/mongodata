@@ -171,39 +171,48 @@ def to_routes():
   write_json(routes, here+'/assets/routes.json')
 
 def to_timing():
+  json_data = {}
   with open(here+'/assets/routes.json', 'r') as f:
     routes = json.load(f)
+    for start in routes.keys():
+      for end in routes[start].keys():
+        directory = 'assets/timing/{}/{}'.format(start,end)
+        try:
+          os.makedirs(directory)
+        except:
+          pass
+        for route in routes[start][end]:
+          filename = '{}/{}/{}.base64'.format(here, directory, route)
+          json_data[filename] = []
 
-  for start in routes.keys():
-    for end in routes[start].keys():
-      directory = 'assets/timing/{}/{}'.format(start,end)
-      try:
-        os.makedirs(directory)
-      except:
-        pass
-      for route in routes[start][end]:
-        build_timing_json(start, end, route, '{}/{}/{}.base64'.format(here, directory, route))
-
-def build_timing_json(start, end, route, filename):
   min_time = datetime.datetime.utcnow() - datetime.timedelta(weeks=8, days=2)
-  times = [x for x in config.collection
-    .find({'start':start, 'end':end, 'via':route, 'utc':{'$gt':min_time}}, {'utc':1, 'current':1})
-    .sort('utc', pymongo.ASCENDING)
-  ]
-  stripped = []
-  for t in times:
-    stripped.append([
-      int((t['utc'] - datetime.datetime(1970,1,1)).total_seconds()),
-      t['current']
-    ])
-  print "{} time points".format(len(times))
-  write_json(stripped, filename, True)
+  all_times = config.collection.find(
+    {'utc':{'$gt':min_time}}, {'utc':1, 'current':1, 'start':1, 'end':1, 'via':1}
+  ).sort('utc', pymongo.ASCENDING)
+
+  missing_routes = {}
+  for t in all_times:
+    filename = '{}/assets/timing/{}/{}/{}.base64'.format(here, t['start'], t['end'], t['via'])
+    if filename in json_data:
+      json_data[filename].append([
+        int((t['utc'] - datetime.datetime(1970,1,1)).total_seconds()),
+        t['current']
+      ])
+    else:
+      route = '{}/{}/{}'.format(t['start'], t['end'], t['via'])
+      missing_routes[route] = True
+
+  for f in json_data.keys():
+    write_json(json_data[f], f, True)
+
+  for r in missing_routes.keys():
+    #sys.stderr.write('missing route: {}\n'.format(r))
 
 def set_config():
   global config
 
   with open(here+'/ship.conf', 'r') as f:
-   opts = yaml.load(f)['mongo']
+    opts = yaml.load(f)['mongo']
 
   config.mongo_host = opts[0]
   client = pymongo.MongoClient(config.mongo_host, socketKeepAlive=True)
