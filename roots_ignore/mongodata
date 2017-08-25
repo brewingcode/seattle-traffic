@@ -207,6 +207,7 @@ def to_timing():
 
   for r in missing_routes.keys():
     #sys.stderr.write('missing route: {}\n'.format(r))
+    pass
 
 def set_config():
   global config
